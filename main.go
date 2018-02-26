@@ -10,15 +10,18 @@ import (
 
 func main() {
 
-	sb := &CurrencyService{}
-	sb.Start(30)
+	//sb := &CurrencyService{}
+	//go sb.Start(30)
 
 	amw := authenticationMiddleware{}
 	amw.Populate()
 
 	r := mux.NewRouter()
-	r.Handle("/", amw.Middleware(HandleRequest(HomePageHandler)))
-
+	r.Handle("/css/", ServeStatic("./html"))
+	r.Handle("/scripts/", ServeStatic("./html/scripts"))
+	r.Handle("/", HandleRequest(HomePageHandler))
+	r.Handle("/login", HandleRequest(LoginPageHandler))
+	r.Handle("/dashboard", amw.Middleware(HandleRequest(DashboardPageHandler)))
 	srv := &http.Server{
 		Handler: r,
 		Addr:    ":8000",

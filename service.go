@@ -17,6 +17,10 @@ type CurrencyService struct {
 func (cs *CurrencyService) Start(interval int) error {
 	cs.Interval = interval
 	mainloop := make(chan bool, 1)
+
+	// TradeQueue holds the last 10 trades for a given currency
+	TradeQueue := engine.CreateTradeQueue()
+
 	var bubble error
 	go func() {
 		for {
@@ -34,7 +38,7 @@ func (cs *CurrencyService) Start(interval int) error {
 				case <-timeout:
 					{
 						// DO WORK
-						err := performService()
+						err := performService(TradeQueue)
 						if err != nil {
 							bubble = fmt.Errorf("%s: %s", "Failed to process currency", err)
 							mainloop <- true
@@ -53,15 +57,15 @@ func (cs *CurrencyService) Start(interval int) error {
 	return bubble
 }
 
-func performService() error {
+func performService(tq *engine.TradeQueueEngine) error {
 	// get the current rates
 	result := engine.GetStocks()
 	// loop through all the rates and update the stats
 	for k, r := range result {
-		engine.TradeQueue.UpdateTrade(k, r)
+		tq.UpdateTrade(k, r)
 	}
 	// now lets see if we need to do something
-	tradeBuys, tradeSells := engine.TradeQueue.GetTrades()
+	tradeBuys, tradeSells := tq.GetTrades()
 	if len(tradeBuys) > 0 {
 
 	}

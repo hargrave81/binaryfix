@@ -17,7 +17,7 @@ func (n *Node) String() string {
 
 // Queue holds a First In First Out queue system
 type Queue struct {
-	nodes []*Node
+	nodes []Node
 	size  int
 	head  int
 	tail  int
@@ -25,22 +25,22 @@ type Queue struct {
 }
 
 // NewQueue returns a new queue with the given initial size.
-func NewQueue(size int) *Queue {
-	return &Queue{
-		nodes: make([]*Node, size),
+func NewQueue(size int) Queue {
+	return Queue{
+		nodes: make([]Node, size),
 		size:  size,
 	}
 }
 
 // Count returns the count of items in the queue
-func (q *Queue) Count() int {
+func (q Queue) Count() int {
 	return q.count
 }
 
 // Push adds a node to the queue.
-func (q *Queue) Push(n *Node) {
+func (q Queue) Push(n Node) {
 	if q.head == q.tail && q.count > 0 {
-		nodes := make([]*Node, len(q.nodes)+q.size)
+		nodes := make([]Node, len(q.nodes)+q.size)
 		copy(nodes, q.nodes[q.head:])
 		copy(nodes[len(q.nodes)-q.head:], q.nodes[:q.head])
 		q.head = 0
@@ -53,16 +53,16 @@ func (q *Queue) Push(n *Node) {
 }
 
 // Peek just peeks at the item about to be removed
-func (q *Queue) Peek() *Node {
+func (q Queue) Peek() Node {
 	if q.count == 0 {
-		return nil
+		return Node{}
 	}
 	node := q.nodes[q.head]
 	return node
 }
 
 // Slice Returns the slice of nodes
-func (q *Queue) Slice() []*Node {
+func (q Queue) Slice() []Node {
 	if q.count == 0 {
 		return nil
 	}
@@ -70,9 +70,9 @@ func (q *Queue) Slice() []*Node {
 }
 
 // Pop removes and returns a node from the queue in first to last order.
-func (q *Queue) Pop() *Node {
+func (q Queue) Pop() Node {
 	if q.count == 0 {
-		return nil
+		return Node{}
 	}
 	node := q.nodes[q.head]
 	q.head = (q.head + 1) % len(q.nodes)

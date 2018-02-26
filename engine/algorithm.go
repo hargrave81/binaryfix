@@ -28,33 +28,34 @@ type Trade struct {
 // TradeQueueEngine is the engine holder for function access
 type TradeQueueEngine struct {
 	MaxTradeCount int
-	tradeQueue    map[string]*queue.Queue
+	tradeQueue    map[string]queue.Queue
 	AverageGain   float64
 	AverageLoss   float64
 }
 
-// TradeQueue holds the last 10 trades for a given currency
-var TradeQueue TradeQueueEngine
-
-func init() {
+// CreateTradeQueue creates a tradequeueengine
+func CreateTradeQueue() *TradeQueueEngine {
 	TradeQueue := &TradeQueueEngine{}
+	TradeQueue.tradeQueue = make(map[string]queue.Queue)
 	TradeQueue.MaxTradeCount = 10
 	TradeQueue.AverageGain = 8 // T1
 	TradeQueue.AverageLoss = 8 // T2
+	return TradeQueue
 }
 
 // UpdateTrade will update a given currency's trade rates
 func (t *TradeQueueEngine) UpdateTrade(currency string, value float64) {
 	// create currency queue if it does not exist
 	if _, ok := t.tradeQueue[currency]; !ok {
-		t.tradeQueue[currency] = &queue.Queue{}
+		genQueue := queue.NewQueue(t.MaxTradeCount)
+		t.tradeQueue[currency] = genQueue
 	}
 
 	// calculate the new trade
 	newTrade := t.calculateRSI(currency, value, t.LastTrade(currency))
 
 	// push the new trade into the queue
-	t.tradeQueue[currency].Push(&queue.Node{Value: &newTrade})
+	t.tradeQueue[currency].Push(queue.Node{Value: &newTrade})
 
 	// throw away the last entry in the queue
 	if t.tradeQueue[currency].Count() > t.MaxTradeCount {
@@ -139,10 +140,13 @@ func (t *TradeQueueEngine) GetTrades() ([]*Trade, []*Trade) {
 	var result1 []*Trade
 	var result2 []*Trade
 	for _, v := range t.tradeQueue {
-		if v.Peek().Value.(*Trade).TradeBuy {
-			result1 = append(result1, v.Peek().Value.(*Trade))
-		} else if v.Peek().Value.(Trade).TradeSell {
-			result2 = append(result2, v.Peek().Value.(*Trade))
+		value := v.Peek().Value
+		if value != nil {
+			if value.(*Trade).TradeBuy {
+				result1 = append(result1, value.(*Trade))
+			} else if value.(Trade).TradeSell {
+				result2 = append(result2, value.(*Trade))
+			}
 		}
 	}
 	return result1, result2
