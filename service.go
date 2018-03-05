@@ -19,7 +19,7 @@ func (cs *CurrencyService) Start(interval int) error {
 	mainloop := make(chan bool, 1)
 
 	// TradeQueue holds the last 10 trades for a given currency
-	TradeQueue := engine.CreateTradeQueue()
+	var TradeQueue = engine.CreateTradeQueue()
 
 	var bubble error
 	go func() {
@@ -32,7 +32,7 @@ func (cs *CurrencyService) Start(interval int) error {
 				timeout <- true
 			}()
 			go func() {
-				log.Println("Processing Currency Index ...")
+				log.Println("Preparing trade engine in ", cs.Interval, " seconds ...")
 
 				select {
 				case <-timeout:
@@ -59,18 +59,24 @@ func (cs *CurrencyService) Start(interval int) error {
 
 func performService(tq *engine.TradeQueueEngine) error {
 	// get the current rates
+	fmt.Println("Fetching future prices ...")
 	result := engine.GetStocks()
+
 	// loop through all the rates and update the stats
+	fmt.Println("Updating calculations ...")
 	for k, r := range result {
 		tq.UpdateTrade(k, r)
 	}
+
 	// now lets see if we need to do something
+	fmt.Println("Performing trades ...")
 	tradeBuys, tradeSells := tq.GetTrades()
 	if len(tradeBuys) > 0 {
-
+		fmt.Println(len(tradeBuys), " buys to perform")
 	}
 	if len(tradeSells) > 0 {
-
+		fmt.Println(len(tradeBuys), " sells to perform")
 	}
+	fmt.Println("Completed trade updates.")
 	return nil
 }

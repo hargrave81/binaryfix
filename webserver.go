@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"path"
 	"strings"
@@ -11,16 +12,42 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// ServeStatic serves static files
-func ServeStatic(baseDirectory string) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		file := path.Join(path.Dir(baseDirectory), r.URL.Path)
-		data, err := ioutil.ReadFile(file)
-		if err != nil {
-			fmt.Println(err.Error())
-		}
+/////////////////////////////// STATIC FILE SERVE
+
+type FileHandler struct {
+	baseFolder string
+}
+
+func (ah FileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Updated to pass ah.appContext as a parameter to our handler type.
+	status := 200
+	file := path.Join(path.Dir(ah.baseFolder), r.URL.Path)
+	data, err := ioutil.ReadFile(file)
+	if err != nil {
+		fmt.Println(err.Error())
+		status = http.StatusNotFound
+	} else {
 		w.Write(data)
-	})
+	}
+	if err != nil {
+		log.Printf("HTTP %d: %q", status, err)
+		switch status {
+		case http.StatusNotFound:
+			http.NotFound(w, r)
+			// And if we wanted a friendlier error page:
+			// err := ah.renderTemplate(w, "http_404.tmpl", nil)
+		case http.StatusInternalServerError:
+			http.Error(w, http.StatusText(status), status)
+		default:
+			http.Error(w, http.StatusText(status), status)
+		}
+	}
+}
+
+// ServeStatic serves static files
+func ServeStatic(baseDirectory string) FileHandler {
+	result := FileHandler{baseDirectory}
+	return result
 }
 
 // HandleRequest Creates a handler to handle web requests
